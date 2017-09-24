@@ -11,8 +11,10 @@ options(warn=-1)
 ```
 ## Loading and preprocessing the data
 
-Calculting a posix date/time and weekday from it. Also determining the weekday vs weekendday and adding as extra
-columns to the dataframe.
+Calculating a posix date/time and weekday from it. 
+
+That needs a bit a character string manipulation of the interval and pasting together with the date field.
+Also determining the weekday vs weekendday and adding as extra columns to the dataframe.
 
 
 ```{r}
@@ -44,7 +46,8 @@ library(reshape2)
 	
 ## What is mean total number of steps taken per day?
 	
-The following code reads data plots a histogram of the sum of steps per day.
+The following code calculates the sum of steps per day via dcast and plots then a histogram of it.
+
 	
 ```{r}	
 	PA_sum_day <- dcast(PA, date ~ . , fun.aggregate=sum, na.rm = FALSE, 
@@ -59,7 +62,7 @@ The following code reads data plots a histogram of the sum of steps per day.
 		print(PA_hist)
 ```
 
-Calculating mean and median for the number of steps per day and printing these with explanatory text
+Calculating mean and median for the number of steps per day and printing these with explanatory text.
 
 ```{r}
 
@@ -96,6 +99,9 @@ Locating the interval with highest number of steps
 ## Imputing missing values
 	
 Imputing missing values now based on the mean steps per 5 minute interval.
+
+A dataframe is being created that has the same size of the original one with mean interval values for all days.
+Therein all "NA" values are replaced through the corresponding mean.
 
 Plotting the histogram of the new data set.
 
@@ -146,7 +152,7 @@ Then Printing the difference in mean and median values. The difference in mean s
 ```
 ## Are there differences in activity patterns between weekdays and weekends?
 
-Creating a plot thereby separating weekday and weekends through the facet_grid function
+Creating a plot thereby separating weekday and weekends through the facet_grid function.
 
 ```{r}
 	PA_mean_int_we <- dcast(PA_imp, w_vs_we + interval ~ . , na.rm = TRUE , 
@@ -160,5 +166,6 @@ Creating a plot thereby separating weekday and weekends through the facet_grid f
 		
 	print(PA_ts)
 ```	
+
 
 End of the assignment 
