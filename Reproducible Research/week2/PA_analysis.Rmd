@@ -160,4 +160,5 @@ Creating a plot thereby separating weekday and weekends through the facet_grid f
 		
 	print(PA_ts)
 ```	
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+End of the assignment 
