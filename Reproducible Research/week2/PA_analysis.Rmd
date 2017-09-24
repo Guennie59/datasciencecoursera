@@ -1,0 +1,163 @@
+---
+title: "Analyzing Personal Activity Data"
+author: "Guennie59"
+date: "24 September 2017"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(warn=-1)
+	
+```
+## Loading and preprocessing the data
+
+Calculting a posix date/time and weekday from it. Also determining the weekday vs weekendday and adding as extra
+columns to the dataframe.
+
+
+```{r}
+library(ggplot2)
+library(reshape2)
+
+	PA <- read.csv("activity.csv")
+	
+	t_string <- paste("0000",as.character(PA$interval),sep="")
+	t_str_len <- nchar(t_string)
+	t_string <- substr(t_string, t_str_len-3, t_str_len)
+	dt_string <- paste(PA$date,t_string)
+	date_time <- strptime(dt_string, format = "%Y-%m-%d %H%M")
+	PA$date_time <- date_time
+	week_day <- weekdays(date_time, abbreviate = TRUE)
+	PA$week_day <- week_day
+
+	week_days = c("Mo","Di","Mi","Do","Fr")
+  wd <- PA$week_day
+		for (i in 1:17568) {
+				if (PA$week_day[i] %in% week_days) {
+			  wd[i] <- "weekday"} else {wd[i] <- "weekend"
+		}
+	}
+
+	PA$w_vs_we <- wd
+	
+```
+	
+## What is mean total number of steps taken per day?
+	
+The following code reads data plots a histogram of the sum of steps per day.
+	
+```{r}	
+	PA_sum_day <- dcast(PA, date ~ . , fun.aggregate=sum, na.rm = FALSE, 
+		value.var = "steps")
+
+		PA_hist <- ggplot(data = PA_sum_day, aes(PA_sum_day$.)) + 
+		geom_histogram() + 
+		scale_y_continuous(breaks = 0:10) +
+		xlab("sum of steps per day") + 
+		ggtitle("Histogram for sum of daily steps")  
+	
+		print(PA_hist)
+```
+
+Calculating mean and median for the number of steps per day and printing these with explanatory text
+
+```{r}
+
+PA_day_sum_mean <- mean(PA_sum_day$., na.rm = TRUE )
+PA_day_sum_median <- median(PA_sum_day$., na.rm = TRUE )
+
+print(paste("Mean number of steps per day:",PA_day_sum_mean ))
+print(paste("Median of number of steps per day:",PA_day_sum_median ))
+```
+## What is the average daily activity pattern?
+
+Determinating the daily activitiy pattern via dcast and creating a time series plot of it.
+
+```{r}
+	PA_mean_int <- dcast(PA, interval ~ . , na.rm = TRUE , 
+		value.var = "steps", fun.aggregate=mean)
+```
+```{r ggplot, echo=FALSE}
+	PA_ts <- ggplot(data=PA_mean_int, aes(PA_mean_int$interval, 
+		PA_mean_int$.)) + geom_line()	+
+		xlab("interval") + 
+		ylab("mean number of steps in interval")
+		ggtitle("Timeseries for mean steps")
+  print(PA_ts)
+```
+
+Locating the interval with highest number of steps
+
+```{r}
+	int_max <- which.max(PA_mean_int$.)
+  int <- PA_mean_int$interval[int_max]
+  print(paste("Maximum steps in interval:", int))
+```	
+## Imputing missing values
+	
+Imputing missing values now based on the mean steps per 5 minute interval.
+
+Plotting the histogram of the new data set.
+
+```{r}
+n_days = length(PA_sum_day$.)
+
+PA_means <- PA_mean_int
+
+	for (i in 1:(n_days-1)) {
+		PA_means <- rbind(PA_means,PA_mean_int)
+	}
+
+	PA_imp <- PA
+	
+	for (i in 1:17568) {
+		if (PA$steps[i] %in% NA) {
+			PA_imp$steps[i] <- PA_means$.[i] 
+			}
+	}
+	PA_imp_sum_day <- dcast(PA_imp, date ~ . , fun.aggregate=sum, 
+		na.rm = FALSE, value.var = "steps")
+	
+		PA_imp_sum_day <- dcast(PA_imp, date ~ . , fun.aggregate=sum, na.rm = FALSE, 
+		value.var = "steps")
+
+		PA_imp_hist <- ggplot(data = PA_imp_sum_day, aes(PA_imp_sum_day$.)) + 
+		geom_histogram() + 
+		xlab("sum of steps per day") + 
+		ggtitle("Histogram for sum of daily steps for imputed data set") 
+		
+		print(PA_imp_hist)
+		
+```
+
+
+Then Printing the difference in mean and median values. The difference in mean should be zero!
+
+```{r}
+	PA_imp_day_sum_mean <- mean(PA_imp_sum_day$., na.rm = TRUE )
+	PA_imp_day_sum_median <- median(PA_imp_sum_day$., na.rm = TRUE )
+
+	day_mean_diff <- PA_imp_day_sum_mean - PA_day_sum_mean 
+	day_median_diff <- PA_imp_day_sum_median - PA_day_sum_median
+
+	print(paste("Difference of mean after imputing is", day_mean_diff))
+	print(paste("Difference of median after imputing is", day_median_diff))
+
+```
+## Are there differences in activity patterns between weekdays and weekends?
+
+Creating a plot thereby separating weekday and weekends through the facet_grid function
+
+```{r}
+	PA_mean_int_we <- dcast(PA_imp, w_vs_we + interval ~ . , na.rm = TRUE , 
+		value.var = "steps", fun.aggregate=mean)	
+	PA_ts <- ggplot(data=PA_mean_int_we, aes(PA_mean_int_we$interval, 
+		PA_mean_int_we$.)) + geom_line()	+
+		facet_grid(w_vs_we ~ .) +
+		xlab("interval") + 
+		ylab("mean number of steps in interval")
+		ggtitle("Timeseries for mean steps")  
+		
+	print(PA_ts)
+```	
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
